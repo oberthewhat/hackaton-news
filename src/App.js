@@ -7,59 +7,44 @@ class App extends React.Component {
     super(props);
     this.state = {
       stories: [],
-      input: "",
-      storyTitle: ""
+      author: "",
     };
   }
 
-  onChange=(e) => {
-    this.setState({
-      input: e.target.value
-    })
-  }
-
-
-  onSubmit= e =>  {
+  authorSearch= (e) =>  {
     e.preventDefault()
-    this.setState ({
-      storyTitle: this.state.stories.map(articles => {
-      return articles.story_title
-      }),
-      input: ""
-    })
+    this.authorQuery()
 
   }
 
-  
-  
-  async componentDidMount() {
-    try{
-      const response = await fetch("http://hn.algolia.com/api/v1/search_by_date?query=...")
-      const stories = await response.json()
-    // .then(response => response.json())
-    this.setState({ stories: stories.hits })
-    } catch(error) {
-      console.log(error)
-    }
+  authorChange= (e) => {
+    e.preventDefault()
+    this.setState({author: e.target.value})
   }
 
+  authorQuery() {
+    fetch(`http://hn.algolia.com/api/v1/search?tags=story,author_${this.state.author}`)
+    .then( res => res.json())
+    .then( d => this.setState({stories: d.hits}))
+  }
+  
   render() {
     console.log(this.state.stories)
-    console.log(this.state.storyTitle) 
     return (
-      <div>
-        <form className="example" onSubmit={this.onSubmit}>
-        <input type="text" name="search" onChange={this.onChange}/>
-        <button type="submit">Search</button>
-        </form>
-        {this.state.stories.map((articles) =>
-        <>
-         <h3>{articles.story_title}</h3>
-         <li key={articles.objectID}>{articles.author}</li> 
-        <a href={articles.story_url} key={articles.story_url}>{articles.story_url}</a>
-        </>
-        )}
-      </div>
+        <div>
+          <form onSubmit={this.authorSearch}>
+            Search by Author:<input value={this.state.author} onChange={this.authorChange} />
+            <button type="submit">Search</button>
+          </form>
+
+          {this.state.stories.map((matches) => 
+          <div className="resultCard">
+          <li className="titles" key={matches.created_at_i}>{matches.title}</li>
+          <li key={matches.objectID}>Date: {matches.created_at}</li>
+          <a href={matches.url} key={matches.url}>{matches.url}</a>
+          </div>
+          )}
+        </div>
     );
 
   }
